@@ -1,5 +1,6 @@
 package org.springframework.mingj.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -11,6 +12,10 @@ import org.springframework.stereotype.Service;
  **/
 @Service
 public class ITestService {
+
+
+	@Autowired
+	private IHelloService service;
 
     public void test(String name){
         System.out.println(name + "test method");

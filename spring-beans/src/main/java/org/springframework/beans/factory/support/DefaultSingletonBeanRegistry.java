@@ -150,6 +150,12 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	@Override
 	@Nullable
 	public Object getSingleton(String beanName) {
+		/**
+		 上面说的true对应这里的第二个参数boolean allowEarlyReference
+		 顾名思义 叫做允许循环引用，而spring在内部调用这个方法的时候传的true
+		 这也能说明spring默认是支持循环引用的
+		 这个allowEarlyReference也是支持spring默认支持循环引用的其中一个原因
+		 **/
 		return getSingleton(beanName, true);
 	}
 
@@ -162,6 +168,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * @return the registered singleton object, or {@code null} if none found
 	 */
 	@Nullable
+	/**
+	 *  1.singletonObjects 单例缓存池，存储的是可以实际使用，并且已经走完生命周期的bean；
+	 *  2.singletonFactories 工厂，存储的是已经被实例化的对象，而不是bean；
+	 *  3.earlySingletonObjects 可以称作为三级缓存
+	 */
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 		// singletonObjects就是单例bean缓存池，也可以称作为spring ioc容器(一般第一次初始化的bean，从singletonObjects中拿到的肯定是null)
 		Object singletonObject = this.singletonObjects.get(beanName);
@@ -194,6 +205,10 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	public Object getSingleton(String beanName, ObjectFactory<?> singletonFactory) {
 		Assert.notNull(beanName, "Bean name must not be null");
 		synchronized (this.singletonObjects) {
+			//首先也是从第一个map即容器中获取
+			//再次证明如果我们在容器初始化后调用getBean其实就是从map当中获取一个bean
+			//我们这里的场景是初始化第一个对象第一次调用这个方法
+			//那么肯定为空
 			Object singletonObject = this.singletonObjects.get(beanName);
 			if (singletonObject == null) {
 				if (this.singletonsCurrentlyInDestruction) {
@@ -212,6 +227,13 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					this.suppressedExceptions = new LinkedHashSet<>();
 				}
 				try {
+					//这里便是创建一个bean的入口了
+					//spring会首先实例化一个对象，然后走生命周期
+					//走生命周期的时候前面说过会判断是否允许循环依赖
+					//如果允许则会把创建出来的这个对象放到第二个map当中
+					//然后接着走生命周期当他走到属性填充的时候
+					//会去get一下B，因为需要填充B，也就是大家认为的自动注入
+					//这些代码下文分析，如果走完了生命周期
 					singletonObject = singletonFactory.getObject();
 					newSingleton = true;
 				}

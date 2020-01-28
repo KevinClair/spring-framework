@@ -315,7 +315,17 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		 * 以上是循环依赖的整个过程，其中getSingleton(beanName)
 		 * 这个方法的存在至关重要
 		 */
+
+		// 第一次调用
 		Object sharedInstance = getSingleton(beanName);
+
+		/**
+		 * 如果sharedInstance不等于空直接返回
+		 * 当然这里没有直接返回而是调用了getObjectForBeanInstance
+		 * 关于这方法以后解释，读者可以认为这里可以理解为
+		 * bean =sharedInstance; 然后方法最下面会返回bean
+		 * spring容器初始化完成之后直接调用getbean的时候不等于空，在创建对象的时候调用就会等于空
+		 */
 		if (sharedInstance != null && args == null) {
 			if (logger.isTraceEnabled()) {
 				if (isSingletonCurrentlyInCreation(beanName)) {
@@ -332,6 +342,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		else {
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
+			/**
+			 * 判断这个类是不是在创建过程中
+			 * 上文说了，一个类是否在创建的过程中是第二次调用getSingleton中决定的
+			 * 这里还没有执行到，如果就在创建过程中则出异常
+			 *
+			 **/
 			if (isPrototypeCurrentlyInCreation(beanName)) {
 				throw new BeanCurrentlyInCreationException(beanName);
 			}
@@ -387,6 +403,15 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 				// Create bean instance.
 				if (mbd.isSingleton()) {
+					/**
+					 * spring默认都是单例的，故而一般都成立的
+					 * 接下来便是调用第二次 getSingleton
+					 * 第二次会把当前正在创建的类记录到set集合
+					 * 然后反射创建这个实例，并且走完生命周期
+					 * 第二次调用getSingleton的源码分析会在下文
+					 **/
+
+					// 这里是第二次调用了getSingleton方法
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
 							return createBean(beanName, mbd, args);

@@ -496,6 +496,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 			// Prepare the bean factory for use in this context.
 			// 填充BeanFactory功能
+			// 1）设置忽略Aware相关的依赖 (beanFactory.ignoreDependencyInterface)
+			// 2) 注册已知的依赖 （beanFactory.registerResolvableDependency）
+			//      BeanFactory、ResourceLoader、ApplicationEventPublisher、ApplicationContext
+			// 3）注册BeanPostProcessor (beanFactory.addBeanPostProcessor)
+			//      ApplicationContextAwareProcessor
+			//      ApplicationListenerDetector
+			//  4）注册环境相关的bean （beanFactory.registerSingleton）
+			//      environment、systemProperties、systemEnvironment
 			prepareBeanFactory(beanFactory);
 
 			try {
@@ -505,6 +513,23 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Invoke factory processors registered as beans in the context.
 				// 激活各种BeanFactory处理器
+				// bean注册的核心逻辑
+				// 一、处理BeanDefinitionRegistryPostProcessor
+				// 1. 调用早期注册的BeanDefinitionRegistryPostProcessor.postProcessBeanDefinitionRegistry（initialize阶段注册的）
+				// 2. 从已经注册的beanDefinition中找出实现BeanDefinitionRegistryPostProcessor接口的beanDefinition,
+				//  实例化并调用postProcessBeanDefinitionRegistry
+				//      1) 处理实现PriorityOrdered接口的
+				//      2) 处理实现Ordered接口的
+				//      3) 处理剩余的，循环处理，直到找不到新的BeanDefinitionRegistryPostProcessor
+				// 3. 调用所有BeanDefinitionRegistryPostProcessor.postProcessBeanFactory方法
+				// 4. 调用早期注册的BeanFactoryPostProcessor.postProcessBeanFactory方法
+				//
+				// 二、处理BeanFactoryPostProcessor
+				// 1. 从已经注册的beanDefinition中找出实现BeanFactoryPostProcessor接口的beanDefinition,
+				//  实例化并调用postProcessBeanFactory方法
+				//      1) 处理实现PriorityOrdered接口的
+				//      2) 处理实现Ordered接口的
+				//      3) 处理剩余的
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
@@ -525,6 +550,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Check for listener beans and register them.
 				// 在所有bean中查找listener bean，然后注册到广播器中
+				// 注册ApplicationListener到ApplicationEventMulticaster
+				// 1)先注册已经指定的ApplicationListener
+				// 2)从已经注册的beanDefinition中找出实现ApplicationListener接口的bean名称并注册
+				// 3)广播指定的ApplicationEvent
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
@@ -533,6 +562,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Last step: publish corresponding event.
 				// 完成刷新过程,通知生命周期处理器lifecycleProcessor刷新过程,同时发出ContextRefreshEvent通知别
+				// 广播ContextRefreshedEvent事件
 				finishRefresh();
 			}
 

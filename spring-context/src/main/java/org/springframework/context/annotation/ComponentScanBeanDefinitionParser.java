@@ -16,14 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.annotation.Annotation;
-import java.util.Set;
-import java.util.regex.Pattern;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
@@ -34,15 +26,18 @@ import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.beans.factory.xml.XmlReaderContext;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
-import org.springframework.core.type.filter.AspectJTypeFilter;
-import org.springframework.core.type.filter.AssignableTypeFilter;
-import org.springframework.core.type.filter.RegexPatternTypeFilter;
-import org.springframework.core.type.filter.TypeFilter;
+import org.springframework.core.type.filter.*;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.lang.annotation.Annotation;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Parser for the {@code <context:component-scan/>} element.
@@ -150,6 +145,7 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		if (annotationConfig) {
 			Set<BeanDefinitionHolder> processorDefinitions =
 					AnnotationConfigUtils.registerAnnotationConfigProcessors(readerContext.getRegistry(), source);
+			/* 注册一些注解相关的PostProcessor */
 			for (BeanDefinitionHolder processorDefinition : processorDefinitions) {
 				compositeDef.addNestedComponent(new BeanComponentDefinition(processorDefinition));
 			}
